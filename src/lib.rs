@@ -149,7 +149,7 @@ impl ArgParse {
 
         let mut skip = 0;
         for (i, arg) in argv.iter().enumerate() {
-            while skip > 0 {
+            if skip > 0 {
                 skip -= 1;
                 continue;
             }
@@ -209,6 +209,13 @@ impl ArgParse {
 
         if remaining_args.len() < self.positionals.len() {
             eprintln!("Not enough arguments provided");
+            exit(1)
+        }
+        if remaining_args.len() > self.positionals.len() {
+            eprintln!(
+                "Extra arguments provided: `{}`",
+                &remaining_args[self.positionals.len()..].join(" ")
+            );
             exit(1)
         }
 

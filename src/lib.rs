@@ -224,32 +224,19 @@ impl ArgParse {
             .positionals
             .iter()
             .max_by(|a, b| a.name.len().cmp(&b.name.len()))
-            .map(|p| p.name.len() + 2) // "<{p.name}>"
+            .map(|p| p.help_len())
             .unwrap_or_default();
         let max_flag_len = &self
             .flags
             .iter()
-            .max_by(|a, b| {
-                (a.long.len()
-                    + a.short.clone().unwrap_or_default().len()
-                    + if a.switch { 0 } else { a.name.len() + 2 })
-                .cmp(
-                    &(b.long.len()
-                        + b.short.clone().unwrap_or_default().len()
-                        + if b.switch { 0 } else { b.name.len() + 2 }),
-                )
-            })
-            .map(|f| {
-                f.long.len()
-                    + 2 // "--{f.long}"
-                    + f.short.as_ref().map(|s| s.len() + 3).unwrap_or_default() // "-{f.short}, "
-                    + if f.switch { 0 } else { f.name.len() + 2 } // "<f.name>"
-            })
+            .max_by(|a, b| a.help_len().cmp(&b.help_len()))
+            .map(|f| f.help_len())
             .unwrap_or_default();
         let max_len = 10.max(*max_pos_len).max(*max_flag_len); // "-h, --help"
 
         let prog_path = args().next().unwrap().parse::<PathBuf>().unwrap();
         let prog_name = prog_path.file_name().unwrap().to_string_lossy();
+
         print!("USAGE: {prog_name}");
         for pos in &self.positionals {
             print!(" <{}>", pos.name);
@@ -261,18 +248,20 @@ impl ArgParse {
                 print!(" [--{} <{}>]", flag.long, flag.name)
             }
         }
+
         println!();
         if &self.about != "" {
             println!("{}", &self.about);
         }
-        println!();
+
         if &self.positionals.len() > &0 {
+            println!();
             println!("POSITIONALS:");
             for pos in &self.positionals {
                 println!(
                     "  <{}>{}    {}",
                     pos.name,
-                    " ".repeat(max_len - pos.name.len() - 2),
+                    " ".repeat(max_len - pos.help_len()),
                     pos.help,
                 )
             }
@@ -294,13 +283,7 @@ impl ArgParse {
                     } else {
                         format!(" <{}>", flag.name)
                     },
-                    " ".repeat(
-                        max_len
-                        - flag.long.len()
-                        - 2 // "--{f.long}"
-                        - flag.short.as_ref().map(|s| s.len() + 3).unwrap_or_default() // "-{f.short}, "
-                        - if flag.switch { 0 } else { flag.name.len() + 2 } // "<f.name>"
-                    ),
+                    " ".repeat(max_len - flag.help_len()),
                     flag.help
                 )
             }
@@ -321,6 +304,12 @@ struct Positional {
     value: String,
 }
 
+impl Positional {
+    fn help_len(&self) -> usize {
+        self.name.len() + 2 // "<{pos.name}>"
+    }
+}
+
 struct Flag {
     name: String,
     long: String,
@@ -328,4 +317,13 @@ struct Flag {
     help: String,
     value: String,
     switch: bool,
+}
+
+impl Flag {
+    fn help_len(&self) -> usize {
+        self.long.len()
+            + 2 // "--{flag.long}"
+            + self.short.as_ref().map(|s| s.len() + 3).unwrap_or_default() // "-{flag.short}, "
+            + if self.switch { 0 } else { self.name.len() + 3 } // " <{flag.name}>"
+    }
 }

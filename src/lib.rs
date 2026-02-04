@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use std::{env::args, process::exit, str::FromStr};
+use std::{env::args, path::PathBuf, process::exit, str::FromStr};
 
 /// The main struct holding the arguments and their configurations
 pub struct ArgParse {
@@ -248,7 +248,8 @@ impl ArgParse {
             .unwrap_or_default();
         let max_len = 10.max(*max_pos_len).max(*max_flag_len); // "-h, --help"
 
-        let prog_name = args().next().unwrap();
+        let prog_path = args().next().unwrap().parse::<PathBuf>().unwrap();
+        let prog_name = prog_path.file_name().unwrap().to_string_lossy();
         print!("USAGE: {prog_name}");
         for pos in &self.positionals {
             print!(" <{}>", pos.name);

@@ -251,6 +251,7 @@ impl ArgParse {
 
         println!();
         if &self.about != "" {
+            println!();
             println!("{}", &self.about);
         }
 

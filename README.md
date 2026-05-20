@@ -15,8 +15,7 @@ You can then use it in your code:
 ```rust
 use argparse::ArgParse;
 
-let mut args = ArgParse::new();
-args.parse();
+let args = ArgParse::new().parse();
 ```
 
 ### Configuration
@@ -28,7 +27,7 @@ You can set some configuration options:
   ```rust
   use argparse::ArgParse;
 
-  let mut args = ArgParse::new().help(true);
+  let args = ArgParse::new().help(true).parse();
 
   // Flags:
   //   -h, --help    Display this help and exit.
@@ -39,7 +38,7 @@ You can set some configuration options:
   ```rust
   use argparse::ArgParse;
 
-  let mut args = ArgParse::new().about("A short description of this program.");
+  let args = ArgParse::new().about("A short description of this program.").parse();
 
   // Usage: ...
   //
@@ -55,8 +54,8 @@ You can set some configuration options:
   ```rust
   use argparse::ArgParse;
 
-  let mut args = ArgParse::new().positional("name", "A short description of this positional argument.");
-
+  let args = ArgParse::new().positional("name", "A short description of this positional argument.").parse();
+  
   // Positionals:
   //   <name>    A short description of this positional argument.
   ```
@@ -71,10 +70,11 @@ You can set some configuration options:
   ```rust
   use argparse::ArgParse;
 
-  let mut args = ArgParse::new()
+  let args = ArgParse::new()
       .flag("name", "name", Some("n"), "A short description of this flag.", false)
       .flag("age", "age", None, "A short description of this flag.", false)
-      .flag("above height limit", "above-height-limit", None, "A short description of this flag.", true);
+      .flag("above height limit", "above-height-limit", None, "A short description of this flag.", true)
+      .parse();
 
   // Flags:
   //   -n, --name <name>       A short description of this flag.
@@ -84,18 +84,18 @@ You can set some configuration options:
 
 ### Getting values
 
-Once you've set up your `ArgParse` instance, call the `parse()` method. Once you've done that, you can call `get_positional()` and `get_flag()` with the names you set in the configuration to retrieve the values you set.
+Once you've set up your `ArgParse` instance, call the `parse()` method. Once you've done that, you can call `positional()` and `flag()` with the names you set in the configuration to retrieve the values you set.
 
 ```rust
 use argparse::ArgParse;
 
-let mut args = ArgParse::new()
+let args = ArgParse::new()
     .positional("name", "A short description of this positional argument.")
-    .flag("age", "age", Some("a"), "A short description of this flag.", false); // set your configuration options
+    .flag("age", "age", Some("a"), "A short description of this flag.", false)
+    .parse(); // set your configuration options
 
-args.parse();
-let name: String = args.get_positional("name").unwrap();
-let age: usize = args.get_flag("age").unwrap();
+let name: String = args.positional("name").unwrap();
+let age: usize = args.flag("age").unwrap();
 ```
 
-If you do not call `parse()` first, both `get_positional()` and `get_flag()` will return `None`. They will also return `None` if the value of the positional or flag could not be parsed to the correct type, e.g. attempting to parse `--age "abcd"` to `usize`.
+Both `positional()` and `flag()` will return `None` if the value of the positional or flag could not be parsed to the correct type, e.g. attempting to parse `--age "abcd"` to `usize`.

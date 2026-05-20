@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use std::{env::args, path::PathBuf, process::exit, str::FromStr};
+use std::{collections::HashMap, env::args, path::PathBuf, process::exit, str::FromStr};
 
 /// The main struct holding the arguments and their configurations
 pub struct ArgParse {
@@ -8,7 +8,6 @@ pub struct ArgParse {
     flags: Vec<Flag>,
     about: String,
     help: bool,
-    parsed: bool,
 }
 
 impl Default for ArgParse {
@@ -25,7 +24,6 @@ impl ArgParse {
             flags: vec![],
             about: String::new(),
             help: true,
-            parsed: false,
         }
     }
 
@@ -36,7 +34,6 @@ impl ArgParse {
             flags: self.flags,
             about: self.about,
             help: set,
-            parsed: false,
         }
     }
 
@@ -47,7 +44,6 @@ impl ArgParse {
             flags: self.flags,
             about: about.to_string(),
             help: self.help,
-            parsed: false,
         }
     }
 
@@ -62,14 +58,12 @@ impl ArgParse {
         positionals.push(Positional {
             name: name.to_string(),
             help: help.to_string(),
-            value: String::new(),
         });
         Self {
             positionals,
             flags: self.flags,
             about: self.about,
             help: self.help,
-            parsed: false,
         }
     }
 
@@ -100,7 +94,6 @@ impl ArgParse {
             long: long.to_string(),
             short: short.map(|s| s.to_string()),
             help: help.to_string(),
-            value: String::new(),
             switch,
         });
         Self {
@@ -108,45 +101,14 @@ impl ArgParse {
             flags,
             about: self.about,
             help: self.help,
-            parsed: false,
         }
     }
 
-    /// Get the value of a positional argument using the name set in the configuration. If this
-    /// function is called before [ArgParse::parse], then it will return [None].
-    pub fn get_positional<T: FromStr>(&self, name: &str) -> Option<T> {
-        if !self.parsed {
-            return None;
-        }
-
-        for pos in &self.positionals {
-            if pos.name == name {
-                return pos.value.parse().ok();
-            }
-        }
-        None
-    }
-
-    /// Get the value of a flag using the name set in the configuration. If this function is called
-    /// before [ArgParse::parse], then it will return [None].
-    pub fn get_flag<T: FromStr>(&self, name: &str) -> Option<T> {
-        if !self.parsed {
-            return None;
-        }
-
-        for flag in &self.flags {
-            if flag.name == name {
-                return flag.value.parse().ok();
-            }
-        }
-        None
-    }
-
-    /// Parse the arguments to the program into the [ArgParse] struct. This function should be
-    /// called before calling [ArgParse::get_positional] or [ArgParse::get_flag].
-    pub fn parse(&mut self) {
+    /// Parse the arguments to the program into the [Parsed] struct.
+    pub fn parse(self) -> Parsed {
         let mut remaining_args = vec![];
         let argv: Vec<_> = args().skip(1).collect();
+        let mut parsed = Parsed::new(&self.positionals, &self.flags);
 
         if self.help && (argv.contains(&"--help".to_string()) || argv.contains(&"-h".to_string())) {
             self.display_help();
@@ -166,12 +128,12 @@ impl ArgParse {
             }
 
             if arg.starts_with("--") {
-                match self.flags.iter_mut().find(|flag| flag.long == arg[2..]) {
+                match self.flags.iter().find(|flag| flag.long == arg[2..]) {
                     Some(f) => {
                         if f.switch {
-                            f.value = String::from("true")
+                            parsed.flags.insert(f.name.clone(), "true".to_string());
                         } else {
-                            f.value = argv[i + 1].clone();
+                            parsed.flags.insert(f.name.clone(), argv[i + 1].clone());
                             skip = 1;
                         }
                         continue;
@@ -191,14 +153,14 @@ impl ArgParse {
             if arg.starts_with("-") {
                 match self
                     .flags
-                    .iter_mut()
+                    .iter()
                     .find(|flag| flag.short == Some(arg[1..].to_string()))
                 {
                     Some(f) => {
                         if f.switch {
-                            f.value = String::from("true")
+                            parsed.flags.insert(f.name.clone(), "true".to_string());
                         } else {
-                            f.value = argv[i + 1].clone();
+                            parsed.flags.insert(f.name.clone(), argv[i + 1].clone());
                             skip = 1;
                         }
                         continue;
@@ -226,10 +188,11 @@ impl ArgParse {
         }
 
         for (i, arg) in remaining_args.iter().enumerate() {
-            self.positionals[i].value = arg.clone()
+            let pos = &self.positionals[i];
+            parsed.positionals.insert(pos.name.clone(), arg.clone());
         }
 
-        self.parsed = true
+        parsed
     }
 
     fn display_help(&self) {
@@ -315,7 +278,6 @@ impl ArgParse {
 struct Positional {
     name: String,
     help: String,
-    value: String,
 }
 
 impl Positional {
@@ -329,7 +291,6 @@ struct Flag {
     long: String,
     short: Option<String>,
     help: String,
-    value: String,
     switch: bool,
 }
 
@@ -339,5 +300,35 @@ impl Flag {
             + 2 // "--{flag.long}"
             + self.short.as_ref().map(|s| s.len() + 3).unwrap_or_default() // "-{flag.short}, "
             + if self.switch { 0 } else { self.name.len() + 3 } // " <{flag.name}>"
+    }
+}
+
+pub struct Parsed {
+    positionals: HashMap<String, String>,
+    flags: HashMap<String, String>,
+}
+
+impl Parsed {
+    fn new(positionals: &[Positional], flags: &[Flag]) -> Self {
+        return Self {
+            positionals: positionals
+                .iter()
+                .map(|p| (p.name.clone(), String::new()))
+                .collect(),
+            flags: flags
+                .iter()
+                .map(|f| (f.name.clone(), String::new()))
+                .collect(),
+        };
+    }
+
+    /// Get the value of a flag using the name set in the configuration.
+    pub fn flag<T: FromStr>(&self, name: &str) -> Result<T, T::Err> {
+        self.flags.get(name).unwrap_or(&String::new()).parse()
+    }
+
+    /// Get the value of a positional argument using the name set in the configuration.
+    pub fn positional<T: FromStr>(&self, name: &str) -> Result<T, T::Err> {
+        self.positionals.get(name).unwrap_or(&String::new()).parse()
     }
 }

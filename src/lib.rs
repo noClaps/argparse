@@ -11,6 +11,12 @@ pub struct ArgParse {
     parsed: bool,
 }
 
+impl Default for ArgParse {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ArgParse {
     /// Create a new instance of [ArgParse].
     pub fn new() -> Self {
@@ -48,9 +54,9 @@ impl ArgParse {
     /// Add a positional argument to your command.
     ///
     /// - `name`: The name of the positional argument. This will be displayed in the help menu, as
-    /// well as acting as the key to retrieve the value in the positional.
+    ///   well as acting as the key to retrieve the value in the positional.
     /// - `help`: The help text to display for the positional argument. This will be displayed in
-    /// the help menu, if it has been enabled.
+    ///   the help menu, if it has been enabled.
     pub fn positional(self, name: &str, help: &str) -> Self {
         let mut positionals = self.positionals;
         positionals.push(Positional {
@@ -70,16 +76,16 @@ impl ArgParse {
     /// Add a flag to your command.
     ///
     /// - `name`: The name of the flag. This will act as the key to retrieve the value in the flag.
-    /// It will also be displayed as the name of the argument in the help menu, if the flag is not
-    /// a switch.
+    ///   It will also be displayed as the name of the argument in the help menu, if the flag is not
+    ///   a switch.
     /// - `long`: The long name of the flag. This corresponds to the `--long` form of the flag, and
-    /// will be displayed as such in the help menu.
+    ///   will be displayed as such in the help menu.
     /// - `short`: The optional short name of the flag. If it is set, then it corresponds to the
-    /// `-short` form of the flag, and will be displayed as such in the help menu.
+    ///   `-short` form of the flag, and will be displayed as such in the help menu.
     /// - `help`: The help text to display for this flag. This will be displayed in the help menu,
-    /// if it has been enabled.
+    ///   if it has been enabled.
     /// - `switch`: Whether or not this flag is boolean. If this is `true`, then the flag will not
-    /// have an argument following it.
+    ///   have an argument following it.
     pub fn flag(
         self,
         name: &str,
@@ -160,7 +166,7 @@ impl ArgParse {
             }
 
             if arg.starts_with("--") {
-                match self.flags.iter_mut().find(|flag| flag.long == &arg[2..]) {
+                match self.flags.iter_mut().find(|flag| flag.long == arg[2..]) {
                     Some(f) => {
                         if f.switch {
                             f.value = String::from("true")
@@ -257,12 +263,12 @@ impl ArgParse {
         }
 
         println!();
-        if &self.about != "" {
+        if !self.about.is_empty() {
             println!();
             println!("{}", &self.about);
         }
 
-        if &self.positionals.len() > &0 {
+        if !self.positionals.is_empty() {
             println!();
             println!("POSITIONALS:");
             for pos in &self.positionals {
@@ -275,7 +281,7 @@ impl ArgParse {
             }
         }
 
-        if &self.flags.len() > &0 {
+        if !self.flags.is_empty() {
             println!();
             println!("FLAGS:");
             for flag in &self.flags {

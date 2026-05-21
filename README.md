@@ -84,7 +84,7 @@ You can set some configuration options:
 
 ### Getting values
 
-Once you've set up your `ArgParse` instance, call the `parse()` method. Once you've done that, you can call `positional()` and `flag()` with the names you set in the configuration to retrieve the values you set.
+Once you've set up your `ArgParse` instance, call the `parse()` method. Once you've done that, you can call `positional()` and `flag()` with the names you set in the configuration to retrieve the values you set. For `flag()`, you also need to provide a fallback value for the case that the flag wasn't passed in.
 
 ```rust
 use argparse::ArgParse;
@@ -95,7 +95,7 @@ let args = ArgParse::new()
     .parse(); // set your configuration options
 
 let name: String = args.positional("name").unwrap();
-let age: usize = args.flag("age").unwrap();
+let age: usize = args.flag("age", 18).unwrap();
 ```
 
-Both `positional()` and `flag()` will return `None` if the value of the positional or flag could not be parsed to the correct type, e.g. attempting to parse `--age "abcd"` to `usize`.
+Both `positional()` and `flag()` will return `Err` if the value of the positional or flag could not be parsed to the correct type, e.g. attempting to parse `--age "abcd"` to `usize`.

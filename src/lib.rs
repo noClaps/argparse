@@ -108,7 +108,7 @@ impl ArgParse {
     pub fn parse(self) -> Parsed {
         let mut remaining_args = vec![];
         let argv: Vec<_> = args().skip(1).collect();
-        let mut parsed = Parsed::new(&self.positionals, &self.flags);
+        let mut parsed = Parsed::new();
 
         if self.help && (argv.contains(&"--help".to_string()) || argv.contains(&"-h".to_string())) {
             self.display_help();
@@ -309,26 +309,26 @@ pub struct Parsed {
 }
 
 impl Parsed {
-    fn new(positionals: &[Positional], flags: &[Flag]) -> Self {
+    fn new() -> Self {
         return Self {
-            positionals: positionals
-                .iter()
-                .map(|p| (p.name.clone(), String::new()))
-                .collect(),
-            flags: flags
-                .iter()
-                .map(|f| (f.name.clone(), String::new()))
-                .collect(),
+            positionals: HashMap::new(),
+            flags: HashMap::new(),
         };
     }
 
-    /// Get the value of a flag using the name set in the configuration.
-    pub fn flag<T: FromStr>(&self, name: &str) -> Result<T, T::Err> {
-        self.flags.get(name).unwrap_or(&String::new()).parse()
+    /// Get the value of a flag using the name set in the configuration, or a given fallback if the
+    /// flag was not set. Returns [Err] if the value in the flag couldn't be parsed to the correct
+    /// type.
+    pub fn flag<T: FromStr>(&self, name: &str, fallback: T) -> Result<T, T::Err> {
+        self.flags.get(name).map_or(Ok(fallback), |f| f.parse())
     }
 
-    /// Get the value of a positional argument using the name set in the configuration.
+    /// Get the value of a positional argument using the name set in the configuration. Returns
+    /// [Err] if the value in the positional couldn't be parsed to the correct type.
     pub fn positional<T: FromStr>(&self, name: &str) -> Result<T, T::Err> {
-        self.positionals.get(name).unwrap_or(&String::new()).parse()
+        self.positionals
+            .get(name)
+            .expect("The positional should always exist")
+            .parse()
     }
 }

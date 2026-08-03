@@ -7,7 +7,7 @@ A very simple command line argument parsing library in Rust.
 Add it to your project with:
 
 ```sh
-cargo add --git https://github.com/noClaps/argparse
+cargo add --git https://codeberg.org/noClaps/argparse
 ```
 
 You can then use it in your code:
@@ -55,7 +55,7 @@ You can set some configuration options:
   use argparse::ArgParse;
 
   let args = ArgParse::new().positional("name", "A short description of this positional argument.").parse();
-  
+
   // Positionals:
   //   <name>    A short description of this positional argument.
   ```

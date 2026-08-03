@@ -317,14 +317,14 @@ impl Parsed {
     }
 
     /// Get the value of a flag using the name set in the configuration, or a given fallback if the
-    /// flag was not set. Returns [Err] if the value in the flag couldn't be parsed to the correct
-    /// type.
+    /// flag was not set. Returns [FromStr::Err] if the value in the flag couldn't be parsed to the
+    /// correct type.
     pub fn flag<T: FromStr>(&self, name: &str, fallback: T) -> Result<T, T::Err> {
         self.flags.get(name).map_or(Ok(fallback), |f| f.parse())
     }
 
     /// Get the value of a positional argument using the name set in the configuration. Returns
-    /// [Err] if the value in the positional couldn't be parsed to the correct type.
+    /// [FromStr::Err] if the value in the positional couldn't be parsed to the correct type.
     pub fn positional<T: FromStr>(&self, name: &str) -> Result<T, T::Err> {
         self.positionals
             .get(name)

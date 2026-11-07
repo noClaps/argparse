@@ -7,7 +7,7 @@ A very simple command line argument parsing library in Rust.
 Add it to your project with:
 
 ```sh
-cargo add --git https://codeberg.org/noClaps/argparse
+cargo add --git https://github.com/noClaps/argparse
 ```
 
 You can then use it in your code:
